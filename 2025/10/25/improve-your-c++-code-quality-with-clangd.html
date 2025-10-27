@@ -1,0 +1,477 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>improve your c++ code quality with clangd.</title>
+        <meta name="description" content="you'll wonder how you ever wrote c++ code without it." />
+        <link rel="icon" href="/assets/images/favicon.png">
+        
+        
+            <link rel="stylesheet" href="/assets/css/post_style.css">
+        
+
+        
+    </head>
+
+    <body>
+        <header>
+    <nav>
+        <div class="nav-links">
+            
+                <a href="/" class="nav-link ">
+                    home.
+                </a>
+            
+                <a href="/about.html" class="nav-link ">
+                    about.
+                </a>
+            
+                <a href="/tags.html" class="nav-link ">
+                    tags.
+                </a>
+            
+                <a href="/archive.html" class="nav-link ">
+                    archive.
+                </a>
+            
+        </div>
+    </nav>
+</header>
+
+        <main id="wrapper">
+            <h1 class="post-title">improve your c++ code quality with clangd.
+</h1>
+
+
+    <div class="post-description">you’ll wonder how you ever wrote c++ code without it.
+</div>
+
+
+<div class="post-metadata">
+    <div class="post-dates">
+        <div>
+            <span class="post-date-label">published:</span>
+            <span class="post-date">
+                saturday, october 25, 2025
+            </span>
+        </div>
+
+        
+    </div>
+
+    
+    <ul class="post-tags">
+        <li>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 512 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc. --><path d="M345 39.1L472.8 168.4c52.4 53 52.4 138.2 0 191.2L360.8 472.9c-9.3 9.4-24.5 9.5-33.9 .2s-9.5-24.5-.2-33.9L438.6 325.9c33.9-34.3 33.9-89.4 0-123.7L310.9 72.9c-9.3-9.4-9.2-24.6 .2-33.9s24.6-9.2 33.9 .2zM0 229.5L0 80C0 53.5 21.5 32 48 32l149.5 0c17 0 33.3 6.7 45.3 18.7l168 168c25 25 25 65.5 0 90.5L277.3 442.7c-25 25-65.5 25-90.5 0l-168-168C6.7 262.7 0 246.5 0 229.5zM144 144a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"/></svg>
+        </li>
+        
+        
+        
+        <li class="post-tag">
+            <a href="/tags/c++" class="post-tag">c++</a>
+        </li>
+        
+        <li class="post-tag">
+            <a href="/tags/clang-tools" class="post-tag">clang-tools</a>
+        </li>
+        
+        
+    </ul>
+    
+</div>
+
+<div class="post-content">
+
+
+<h2 id="table-of-contents">
+  
+  
+    table of contents. <a href="#table-of-contents" class="heading-anchor" anchor-glyph=""></a>
+  
+  
+</h2>
+    
+
+<ul>
+  <li><a href="#introduction">introduction.</a></li>
+  <li><a href="#prerequisite-generate-compile_commandsjson">prerequisite: generate compile_commands.json.</a></li>
+  <li><a href="#installing-clangd">installing clangd.</a>
+    <ul>
+      <li><a href="#1-install-the-clangd-extension">1: install the clangd extension.</a></li>
+      <li><a href="#2-install-the-clangd-language-server">2: install the clangd language server.</a>
+        <ul>
+          <li><a href="#option-a-download-the-suggested-version">option a: download the suggested version.</a></li>
+          <li><a href="#option-b-download-a-specific-version-separately">option b: download a specific version separately.</a></li>
+        </ul>
+      </li>
+      <li><a href="#3-disable-competing-extensions">3: disable competing extensions.</a></li>
+    </ul>
+  </li>
+  <li><a href="#configuring-clangd">configuring clangd.</a></li>
+  <li><a href="#begin-using-clangd">begin using clangd.</a></li>
+  <li><a href="#troubleshooting-common-issues">troubleshooting common issues.</a>
+    <ul>
+      <li><a href="#issue-clangd-appears-frozen-or-unresponsive">issue: clangd appears frozen or unresponsive.</a></li>
+      <li><a href="#issue-clangd-cannot-find-headers">issue: clangd cannot find headers.</a></li>
+      <li><a href="#issue-incorrect-or-missing-diagnostics">issue: incorrect or missing diagnostics.</a></li>
+    </ul>
+  </li>
+  <li><a href="#conclusion">conclusion.</a></li>
+</ul>
+<h2 id="introduction">
+  
+  
+    introduction. <a href="#introduction" class="heading-anchor" anchor-glyph=""></a>
+  
+  
+</h2>
+    
+
+<p>In my <a href="/2025/03/25/how-to-generate-compile-commands-json.html">previous blog post</a>, I talked about how I spent the first few years of my software development career writing <span class="nowrap">C++</span> code with this feeling that I was missing something that could take my C++ skills to the next level. For me, that “missing something” was the suite of Clang Tools. Once I discovered and learned to use tools like clang-tidy and clang-format in my workflow, I became a much more efficient <span class="nowrap">C++</span> developer. However, of all of the Clang Tools, clangd is the tool that has had the most impact on my productivity.</p>
+
+<p>clangd is a language server that integrates with your IDE (or editor of choice) to provide intelligent code completion as you type, catching errors and warnings in real time before you compile. As someone who uses VS Code, I find clangd’s IntelliSense to be faster and more accurate than the IntelliSense bundled in the official Microsoft <span class="nowrap">C/C++</span> extension for VS Code. clangd offers instant navigation to definitions and declarations with a single keystroke or Ctrl+Click, and it can also quickly find all references to any symbol across your entire project. When you need to rename a variable or refactor code, clangd updates everything automatically for you: declarations, definitions, and all usages are renamed or adjusted as needed. clangd also integrates clang-tidy directly into your editor, surfacing code quality issues, potential bugs, and style violations as you write. Beyond these features, clangd can automatically fix many common problems, suggest or automatically add missing <code class="language-plaintext highlighter-rouge">#include</code> directives, and provide hover documentation for any symbol in your code.</p>
+
+<p>In this post, I’ll walk you through setting up clangd in VS Code and show you how you can configure it to work best for you.</p>
+<h2 id="prerequisite-generate-compile_commandsjson">
+  
+  
+    <span>prerequisite: generate compile_<wbr />commands<wbr />.json.</span> <a href="#prerequisite-generate-compile_commandsjson" class="heading-anchor" anchor-glyph=""></a>
+  
+  
+</h2>
+    
+
+<p>Before you can use clangd, you need to generate a <code class="language-plaintext highlighter-rouge">compile_commands.json</code> file for your project so that clangd can analyze your code. Without this file, clangd isn’t able to provide accurate IntelliSense or customized warnings and suggestions. For detailed instructions on generating a <code class="language-plaintext highlighter-rouge">compile_commands.json</code> file for your project, please check out my previous post: <a href="/2025/03/25/how-to-generate-compile-commands-json.html">how to generate compile_<wbr />commands<wbr />.json for your <span class="nowrap">c++</span> project</a>.</p>
+<h2 id="installing-clangd">
+  
+  
+    installing clangd. <a href="#installing-clangd" class="heading-anchor" anchor-glyph=""></a>
+  
+  
+</h2>
+    
+
+<p>To integrate clangd into your editor of choice, you’ll need to install two things: the clangd language server which runs in the background; and the clangd extension for your editor. clangd extensions are available for many editors, including VS Code, Emacs, Vim, Neovim, Sublime Text, and more.</p>
+
+<p>At a high level, the steps for installing clangd are as follows:</p>
+<ol>
+  <li>install the clangd extension for your editor</li>
+  <li>install the clangd language server</li>
+  <li>disable competing extensions in your editor</li>
+</ol>
+
+<p>The subsections below contain information for performing these steps in VS Code since that is the editor I use, but the process will be similar for other editors.</p>
+<h3 id="1-install-the-clangd-extension">
+  
+  
+    1: install the clangd extension. <a href="#1-install-the-clangd-extension" class="heading-anchor" anchor-glyph=""></a>
+  
+  
+</h3>
+    
+
+<p>First, install the clangd extension for your editor. In VS Code:</p>
+
+<ol>
+  <li>Go to Extensions</li>
+  <li>Search for “clangd”</li>
+  <li>Install the official clangd extension by <strong>LLVM</strong></li>
+</ol>
+<h3 id="2-install-the-clangd-language-server">
+  
+  
+    2: install the clangd language server. <a href="#2-install-the-clangd-language-server" class="heading-anchor" anchor-glyph=""></a>
+  
+  
+</h3>
+    
+
+<p>You have two options for installing the clangd language server:</p>
+
+<p><strong>Option A:</strong> download the clangd language server that is suggested by the clangd extension.</p>
+
+<p><strong>Option B:</strong> download a specific version of the clangd language server separately.</p>
+<h4 id="option-a-download-the-suggested-version">
+  
+  
+    option a: download the suggested version. <a href="#option-a-download-the-suggested-version" class="heading-anchor" anchor-glyph=""></a>
+  
+  
+</h4>
+    
+
+<p>After downloading the clangd extension in VS Code, a popup will appear in VS Code asking if you would like to download the latest clangd language server. If you would like to go this route, simply press the ‘download’ button in the popup to download the language server. Your clangd extension settings in VS Code will be updated to point to the clangd language server binary automatically.</p>
+<h4 id="option-b-download-a-specific-version-separately">
+  
+  
+    option b: download a specific version separately. <a href="#option-b-download-a-specific-version-separately" class="heading-anchor" anchor-glyph=""></a>
+  
+  
+</h4>
+    
+
+<p>After downloading the clangd extension in VS Code, press ‘no’ in the popup asking if you would like to download the latest clangd language server. Going this route, you will need to install your clangd language server separately. This method is preferred if you would like to have consistent clangd language server versioning across a team and/or the ability to manage your clangd language server version via your OS package manager.</p>
+
+<p>As an example, on Ubuntu/Debian, you can install clangd 18 with the following command:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>apt <span class="nb">install </span>clangd-18
+</code></pre></div></div>
+
+<p>After installing the clangd language server version of your choosing, you will need to update your VS Code settings to tell the clangd extension where the language server binary is installed on your system. One way to do this is to open the VS Code command palette and type “settings”, then select the option that says <strong>Preferences: Open User Settings (JSON)</strong>. After selecting this option, a JSON file is opened which contains your VS Code user settings. In here, you will add a new JSON key for <code class="language-plaintext highlighter-rouge">clangd.path</code>, whose value is a string containing the full file path to the clangd language server binary:</p>
+
+<div class="language-json-doc highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"clangd.path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/usr/bin/clangd-18"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>Adjust the path according to where your clangd language server binary is installed.</p>
+<h3 id="3-disable-competing-extensions">
+  
+  
+    3: disable competing extensions. <a href="#3-disable-competing-extensions" class="heading-anchor" anchor-glyph=""></a>
+  
+  
+</h3>
+    
+
+<p>At this point, the clangd extension is installed in your editor and it is linked to your clangd language server. The final installation step is to disable any competing extensions in your editor so that clangd works as expected.</p>
+
+<p>In VS Code, the clangd extension will prompt you to disable Microsoft’s <span class="nowrap">C/C++</span> IntelliSense if that is enabled. You can happily disable it — clangd provides superior functionality anyway. Make sure to also disable any other competing extensions to get the most out of clangd.</p>
+<h2 id="configuring-clangd">
+  
+  
+    configuring clangd. <a href="#configuring-clangd" class="heading-anchor" anchor-glyph=""></a>
+  
+  
+</h2>
+    
+
+<p>At this point, you can (and should) configure clangd’s functionality to your liking. This is an important step to follow, because if you skip it, clangd might not give you the suggestions and warnings you care about, and thus you won’t be taking full advantage of the tool. To customize its suggestions and warnings, clangd offers the ability to create your own custom <code class="language-plaintext highlighter-rouge">.clangd</code> file with exactly the settings you want to use. This customizability is what sets clangd apart from other tools. You can configure precisely which warnings you care about and which ones you don’t, tailoring the tool to match your project’s needs and/or your personal coding standards. This means you only see diagnostics that matter to you, rather than being overwhelmed with noise from checks that aren’t relevant to your codebase.</p>
+
+<p>For me, the most valuable aspect of clangd is that it reduces my cognitive burden, and this is only possible thanks to the customizability of the tool. As a developer who prioritizes safety, quality, and consistency in my <span class="nowrap">C++</span> code, clangd gives me confidence that I’m writing good code — or at least what I consider to be good code — without me needing to mentally track every potential issue. Instead of analyzing every line of code for possible problems, I can instead focus on the logic I’m trying to implement while clangd highlights issues in real time. This is incredibly helpful not only when writing my own code, but also while I am reviewing other people’s code in my editor. clangd surfaces potential problems immediately, meaning that I don’t have to scan for all of these issues myself.</p>
+
+<p>You can place a <code class="language-plaintext highlighter-rouge">.clangd</code> file in either (or both) of the following locations:</p>
+
+<ul>
+  <li><strong>User-wide</strong>: Place <code class="language-plaintext highlighter-rouge">.clangd</code> in your home directory (e.g. <code class="language-plaintext highlighter-rouge">~/.clangd</code>) to set defaults for all projects.</li>
+  <li><strong>Per-project</strong>: Place <code class="language-plaintext highlighter-rouge">.clangd</code> in your project root to customize settings for that specific project. These settings will override those from the user-wide <code class="language-plaintext highlighter-rouge">.clangd</code> file.</li>
+</ul>
+
+<p>Below is my personal user-wide <code class="language-plaintext highlighter-rouge">.clangd</code> file — the one I use for all of my <span class="nowrap">C++</span> projects. I have tweaked this file through the years to find a good balance of the features and diagnostics I care about. Feel free to use this as a starting point for creating your own <code class="language-plaintext highlighter-rouge">.clangd</code> file:</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">CompileFlags</span><span class="pi">:</span>
+  <span class="na">Add</span><span class="pi">:</span> <span class="pi">[</span><span class="nv">-Wall</span><span class="pi">,</span> <span class="nv">-std=c++17</span><span class="pi">]</span>
+
+<span class="na">InlayHints</span><span class="pi">:</span>
+  <span class="na">ParameterNames</span><span class="pi">:</span> <span class="s">No</span>
+  <span class="na">DeducedTypes</span><span class="pi">:</span> <span class="s">No</span>
+  <span class="na">Designators</span><span class="pi">:</span> <span class="s">No</span>   <span class="c1"># controls the display of indices in arrays</span>
+
+<span class="na">Diagnostics</span><span class="pi">:</span>
+  <span class="na">UnusedIncludes</span><span class="pi">:</span> <span class="s">Strict</span>
+  <span class="na">MissingIncludes</span><span class="pi">:</span> <span class="s">Strict</span>
+  <span class="na">Includes</span><span class="pi">:</span>
+    <span class="na">IgnoreHeader</span><span class="pi">:</span> <span class="pi">[</span><span class="nv">signal.h</span><span class="pi">,</span> <span class="nv">stdio.h</span><span class="pi">]</span>
+  <span class="na">ClangTidy</span><span class="pi">:</span>
+    <span class="na">FastCheckFilter</span><span class="pi">:</span> <span class="s">None</span>
+    <span class="na">Add</span><span class="pi">:</span> <span class="pi">[</span><span class="nv">bugprone-*</span><span class="pi">,</span> <span class="nv">cert-*</span><span class="pi">,</span> <span class="nv">modernize-*</span><span class="pi">,</span> <span class="nv">performance-*</span><span class="pi">,</span> <span class="nv">misc-unused-*</span><span class="pi">,</span> <span class="nv">misc-use-anonymous-namespace</span><span class="pi">,</span> <span class="nv">cppcoreguidelines-*</span><span class="pi">]</span>
+    <span class="na">Remove</span><span class="pi">:</span> <span class="pi">[</span><span class="nv">bugprone-easily-swappable-parameters</span><span class="pi">,</span> <span class="nv">modernize-use-trailing-return-type</span><span class="pi">,</span> <span class="nv">modernize-avoid-bind</span><span class="pi">,</span> <span class="nv">cppcoreguidelines-avoid-magic-numbers</span><span class="pi">,</span> <span class="nv">cppcoreguidelines-pro-bounds-pointer-arithmetic</span><span class="pi">,</span> <span class="nv">cppcoreguidelines-pro-bounds-constant-array-index</span><span class="pi">,</span> <span class="nv">cppcoreguidelines-pro-type-union-access</span><span class="pi">,</span> <span class="nv">cppcoreguidelines-special-member-functions</span><span class="pi">]</span>
+</code></pre></div></div>
+
+<p>For a complete list of configuration options and descriptions of what each one does, see the <a href="https://clangd.llvm.org/config">clangd configuration documentation</a>.</p>
+
+<p>Finally, after you have decided what your <code class="language-plaintext highlighter-rouge">.clangd</code> file will include, you will need to configure your VS Code settings to tell the clangd language server that you are using <code class="language-plaintext highlighter-rouge">.clangd</code> files for configuration. This is done by passing the <code class="language-plaintext highlighter-rouge">--enable-config</code> argument to the clangd language server. As mentioned before, one way to edit your VS Code settings is to open the VS Code command palette and type “settings”, then select the option that says <strong>Preferences: Open User Settings (JSON)</strong>. After selecting this option, a JSON file is opened which contains your VS Code user settings. In here, you will add a new JSON key for <code class="language-plaintext highlighter-rouge">clangd.arguments</code>, whose value is an array of strings containing the arguments that will be passed to the clangd language server. You will need to add the <code class="language-plaintext highlighter-rouge">"--enable-config"</code> argument at a minimum, though there are other optional arguments you can provide to tweak the features and behaviour of clangd even further. Below is a JSON snippet showing the arguments I pass to the clangd language server:</p>
+
+<div id="configured-clangd-arguments" class="language-json-doc highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"clangd.arguments"</span><span class="p">:</span><span class="w"> 
+    </span><span class="p">[</span><span class="w"> 
+        </span><span class="s2">"--enable-config"</span><span class="p">,</span><span class="w">  </span><span class="c1">// read user and project configuration from '.clangd' files</span><span class="w">
+        </span><span class="s2">"--log=verbose"</span><span class="p">,</span><span class="w">  </span><span class="c1">// enable verbose log output</span><span class="w">
+        </span><span class="s2">"--pretty"</span><span class="p">,</span><span class="w">  </span><span class="c1">// pretty-print JSON log output</span><span class="w">
+        </span><span class="s2">"--background-index"</span><span class="p">,</span><span class="w">  </span><span class="c1">// index project code in the background and persist index on disk</span><span class="w">
+        </span><span class="s2">"--clang-tidy"</span><span class="p">,</span><span class="w">  </span><span class="c1">// enable clang-tidy diagnostics</span><span class="w">
+        </span><span class="s2">"--header-insertion=iwyu"</span><span class="p">,</span><span class="w">  </span><span class="c1">// insert #include directives according to 'Include What You Use' rules</span><span class="w">
+        </span><span class="s2">"--compile-commands-dir=${workspaceFolder}/build/"</span><span class="w">  </span><span class="c1">// the path to the directory where compile_commands.json is located. My projects are always configured to place this file in the build directory</span><span class="w">
+    </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+<h2 id="begin-using-clangd">
+  
+  
+    begin using clangd. <a href="#begin-using-clangd" class="heading-anchor" anchor-glyph=""></a>
+  
+  
+</h2>
+    
+
+<p>At this point, clangd is installed, configured, and ready to use. I hope you enjoy the benefits of using clangd in your development workflow and that you get as much value out of it as I have. I would encourage you to continue tweaking the clangd configuration to your liking as you use it.</p>
+
+<p><strong>Pro tip:</strong> when clangd shows a diagnostic with a lightbulb icon, click on the lightbulb icon to see the available quick fixes. Many of these can be applied automatically, saving you time. E.g.: adding missing <code class="language-plaintext highlighter-rouge">#include</code> directives.</p>
+<h2 id="troubleshooting-common-issues">
+  
+  
+    troubleshooting common issues. <a href="#troubleshooting-common-issues" class="heading-anchor" anchor-glyph=""></a>
+  
+  
+</h2>
+    
+
+<p>Even with proper setup, you might encounter some minor issues while using clangd. Below are the most common problems I come across and how to solve them.</p>
+
+<p>When troubleshooting, the clangd log output helps narrow down problems. To open the log output in VS Code:</p>
+
+<ol>
+  <li>Open the Output panel</li>
+  <li>Select “clangd” from the dropdown</li>
+  <li>Look for error messages or warnings. E.g., you can use Ctrl+F to find “error”</li>
+</ol>
+
+<p>For even more detailed logs, you can enable verbose logging for clangd by adding the <code class="language-plaintext highlighter-rouge">--log=verbose</code> clangd argument in your VS Code settings as <a href="#configured-clangd-arguments">shown above</a>.</p>
+<h3 id="issue-clangd-appears-frozen-or-unresponsive">
+  
+  
+    issue: clangd appears frozen or unresponsive. <a href="#issue-clangd-appears-frozen-or-unresponsive" class="heading-anchor" anchor-glyph=""></a>
+  
+  
+</h3>
+    
+
+<p><strong>Symptoms</strong>:</p>
+<ul>
+  <li>IntelliSense stops working</li>
+  <li>No error highlighting is provided for obvious errors</li>
+  <li>Suggestions seem outdated</li>
+</ul>
+
+<p><strong>Solution</strong>: Restart the clangd language server. In VS Code:</p>
+<ol>
+  <li>Open the command palette</li>
+  <li>Type “clangd” and select the option that says <strong>clangd: Restart language server</strong></li>
+</ol>
+
+<p>This is the first thing to try when clangd seems to be misbehaving.</p>
+<h3 id="issue-clangd-cannot-find-headers">
+  
+  
+    issue: clangd cannot find headers. <a href="#issue-clangd-cannot-find-headers" class="heading-anchor" anchor-glyph=""></a>
+  
+  
+</h3>
+    
+
+<p><strong>Symptom</strong>: Red squiggles under <code class="language-plaintext highlighter-rouge">#include</code> directives, “pp_file_not_found” errors.</p>
+
+<p><strong>Possible solutions</strong>:</p>
+<ul>
+  <li>Make sure that you only have one workspace open per VS Code window</li>
+  <li>Verify your <code class="language-plaintext highlighter-rouge">compile_commands.json</code> file is in the expected location for your project</li>
+  <li>Make sure you’ve opened your project from its root directory</li>
+  <li>Try restarting clangd (see above)</li>
+</ul>
+<h3 id="issue-incorrect-or-missing-diagnostics">
+  
+  
+    issue: incorrect or missing diagnostics. <a href="#issue-incorrect-or-missing-diagnostics" class="heading-anchor" anchor-glyph=""></a>
+  
+  
+</h3>
+    
+
+<p><strong>Symptom</strong>: clangd shows errors in code that compiles fine, or misses obvious errors.</p>
+
+<p><strong>Possible solutions</strong>:</p>
+<ul>
+  <li>Check that your <code class="language-plaintext highlighter-rouge">.clangd</code> file configuration isn’t suppressing important diagnostics</li>
+  <li>Add a <code class="language-plaintext highlighter-rouge">CompileFlags</code> section to your <code class="language-plaintext highlighter-rouge">.clangd</code> file to specify your targeted <span class="nowrap">C++</span> version. E.g.:
+    <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">CompileFlags</span><span class="pi">:</span>
+  <span class="na">Add</span><span class="pi">:</span> <span class="pi">[</span><span class="nv">-std=c++1z</span><span class="pi">]</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+<h2 id="conclusion">
+  
+  
+    conclusion. <a href="#conclusion" class="heading-anchor" anchor-glyph=""></a>
+  
+  
+</h2>
+    
+
+<p>I hope this guide has helped you to begin working with clangd. Getting started with clangd requires some initial setup time, but the payoff in code quality and developer productivity is absolutely worth it.</p>
+
+<p>The key steps to remember:</p>
+<ol>
+  <li>Generate <code class="language-plaintext highlighter-rouge">compile_commands.json</code> for your project</li>
+  <li>Install the clangd extension in your editor</li>
+  <li>Configure clangd with a <code class="language-plaintext highlighter-rouge">.clangd</code> file to match your project’s needs</li>
+  <li>Use the “Restart language server” command when things act up</li>
+</ol>
+
+<p>With real-time error detection, intelligent code completion, powerful navigation, and customizable diagnostics, clangd transforms any editor into a world-class <span class="nowrap">C++</span> development environment. Once you experience the difference, you’ll wonder how you ever wrote <span class="nowrap">C++</span> code without it.</p>
+
+<p>Until next time!</p>
+
+</div>
+
+<h2 class="post-author-heading">author.</h2>
+
+<div class="post-author-card">
+    <img
+        class="author-avatar"
+        src="/assets/images/avatar.png"
+        alt="Noah Attwood"
+    />
+    
+    <div class="post-author-info">
+        <div class="post-author-card-top">
+            <h2 class="author-name">Noah Attwood</h2>
+
+            <ul class="author-social-media-list">
+    <!-- Iterate through site.social-links and render an svg symbol and a link for each one -->
+    
+        <li>
+            <a class="social-media-link" rel="me" target="_blank" href="https://github.com/attwoodn" title="github"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg></a>
+        </li>
+        <li>
+            <a class="social-media-link" rel="me" target="_blank" href="https://ca.linkedin.com/in/noahattwood" title="linkedin"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a>
+        </li>
+        <li>
+            <a class="social-media-link" rel="me" target="_blank" href="mailto:hello@noahattwood.com" title="email"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 .02c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm6.99 6.98l-6.99 5.666-6.991-5.666h13.981zm.01 10h-14v-8.505l7 5.673 7-5.672v8.504z"/></svg></a>
+        </li></ul>
+        </div>
+
+        <div class="post-author-card-bottom">
+            <div class="author-bio">Software developer. Specialized with C++ in a microservice architecture. Sometimes I write about stuff.
+</div>
+        </div>
+    </div>
+</div>
+
+
+<div class="post-navigation">
+    
+    
+
+    
+        <a class="previous-post" href="/2025/03/25/how-to-generate-compile-commands-json.html">
+            <span class="post-navigation-label">prev.</span> 
+            <span>how to generate compile_<wbr />commands<wbr />.json for your c++ project.</span>
+        </a>
+    
+
+    
+        <div class="next-post">
+            <span class="post-navigation-label">next.</span>
+            no newer posts.
+        </div>
+    
+</div>
+
+        </main>
+
+        <footer>
+    <div class="footer-content">&copy; 2025 Noah Attwood. All rights reserved.</div>
+</footer>
+
+    </body>
+</html>
